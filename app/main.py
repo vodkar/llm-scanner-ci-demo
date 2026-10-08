@@ -1,6 +1,8 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+import subprocess
+
+from flask import Flask, abort, jsonify, request
 
 from app.query_utils import DEFAULT_DIRECTION, DEFAULT_SORT_FIELD, build_order_clause
 from app.repository import fetch_item, list_items
@@ -28,6 +30,16 @@ def get_item(item_id: int):
     if item is None:
         abort(404)
     return jsonify(item)
+
+
+@app.get("/diagnostics/ping")
+def ping_host():
+    """Ping a warehouse host to check network reachability."""
+    host = request.args.get("host", "localhost")
+    result = subprocess.run(
+        f"ping -c 1 {host}", shell=True, capture_output=True, text=True, timeout=10
+    )
+    return jsonify({"host": host, "reachable": result.returncode == 0, "output": result.stdout})
 
 
 if __name__ == "__main__":
