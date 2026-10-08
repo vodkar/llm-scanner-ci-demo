@@ -1,8 +1,13 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+from flask import Flask, abort, jsonify, request
 
-from app.query_utils import DEFAULT_DIRECTION, DEFAULT_SORT_FIELD, build_order_clause
+from app.query_utils import (
+    DEFAULT_DIRECTION,
+    DEFAULT_SORT_FIELD,
+    build_order_clause,
+    normalize_sort,
+)
 from app.repository import fetch_item, list_items
 
 app = Flask(__name__)
@@ -16,8 +21,10 @@ def health() -> dict[str, str]:
 
 @app.get("/items")
 def get_items():
-    """Return all inventory items."""
-    items = list_items(build_order_clause(DEFAULT_SORT_FIELD, DEFAULT_DIRECTION))
+    """Return all inventory items, optionally sorted via ``?sort=<field>&dir=<asc|desc>``."""
+    sort_field = normalize_sort(request.args.get("sort", DEFAULT_SORT_FIELD))
+    direction = request.args.get("dir", DEFAULT_DIRECTION).upper()
+    items = list_items(build_order_clause(sort_field, direction))
     return jsonify(items)
 
 
