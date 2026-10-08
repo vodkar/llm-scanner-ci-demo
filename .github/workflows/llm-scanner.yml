@@ -36,7 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v7
@@ -66,8 +65,7 @@ jobs:
 
       - name: Build PR diff
         run: |
-          git diff "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
-            -- '*.py' > pr.diff
+          git diff "${{ github.event.pull_request.base.sha }}" HEAD -- '*.py' > pr.diff
           cat pr.diff
 
       - name: Scan changed code
