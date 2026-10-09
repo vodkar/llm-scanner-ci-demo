@@ -1,8 +1,9 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+from flask import Flask, abort, jsonify, request
 
-from app.auth import admin_required, current_user, login_required
+from app.auth import current_user, login_required, permission_required
+from app.permissions import Permission, delegate_permission
 from app.query_utils import DEFAULT_DIRECTION, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
 
@@ -34,11 +35,24 @@ def get_item(item_id: int):
 
 
 @app.delete("/items/<int:item_id>")
-@admin_required
+@permission_required(Permission.ITEMS_DELETE)
 def remove_item(item_id: int):
-    """Delete an inventory item (administrators only)."""
+    """Delete an inventory item (requires ``items:delete``)."""
     if not delete_item(item_id):
         abort(404)
+    return "", 204
+
+
+@app.post("/users/<int:user_id>/permissions")
+@permission_required(Permission.PERMISSIONS_MANAGE)
+def grant_permission(user_id: int):
+    """Delegate one permission to a user: ``{"permission": "items:delete"}``."""
+    payload = request.get_json(silent=True) or {}
+    try:
+        permission = Permission(payload.get("permission"))
+    except ValueError:
+        abort(400, description="unknown permission")
+    delegate_permission(user_id, permission)
     return "", 204
 
 

@@ -11,3 +11,9 @@ CREATE TABLE IF NOT EXISTS users (
     token_hash TEXT NOT NULL UNIQUE,
     preferred_sort TEXT NOT NULL DEFAULT 'name'
 );
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    permission TEXT NOT NULL,
+    PRIMARY KEY (user_id, permission)
+);
