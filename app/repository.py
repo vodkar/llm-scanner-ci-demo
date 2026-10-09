@@ -29,3 +29,17 @@ def list_items(order_clause: str) -> list[dict[str, object]]:
     with get_connection() as connection:
         rows = connection.execute(f"SELECT {_ITEM_COLUMNS} FROM items {order_clause}").fetchall()
     return [dict(row) for row in rows]
+
+
+def withdraw_stock(item_id: int, amount: int) -> bool:
+    """Atomically take ``amount`` units of an item out of stock.
+
+    Returns:
+        True if the item had enough stock and was updated, False otherwise.
+    """
+    with get_connection() as connection:
+        cursor = connection.execute(
+            "UPDATE items SET quantity = quantity - ? WHERE id = ? AND quantity >= ?",
+            (amount, item_id, amount),
+        )
+    return cursor.rowcount == 1
