@@ -1,4 +1,4 @@
-"""Bearer-token authentication and role checks for route handlers."""
+"""Bearer-token authentication and permission checks for route handlers."""
 
 from collections.abc import Callable
 from functools import wraps
@@ -6,6 +6,7 @@ from typing import ParamSpec, TypeVar
 
 from flask import abort, g, request
 
+from app.permissions import Permission, effective_permissions
 from app.users import User, fetch_user_by_token
 
 P = ParamSpec("P")
@@ -43,3 +44,19 @@ def admin_required(view: Callable[P, R]) -> Callable[P, R]:
         return view(*args, **kwargs)
 
     return wrapper
+
+
+def permission_required(permission: Permission) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Allow only authenticated users holding ``permission`` (401 without a token, 403 otherwise)."""
+
+    def decorator(view: Callable[P, R]) -> Callable[P, R]:
+        @login_required
+        @wraps(view)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            if permission not in effective_permissions(current_user()):
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
