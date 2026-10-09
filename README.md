@@ -26,5 +26,8 @@ Serve the model on the LLM host:
 
 ```bash
 llama-server -hf ggml-org/gemma-4-E2B-it-GGUF:Q8_0 --alias google/gemma-4-E2B-it \
-  --jinja --host 0.0.0.0 --port 8000 -c 32768 -np 2
+  --jinja --host 0.0.0.0 --port 8000 -c 196608 -np 6 --no-kv-unified
 ```
+
+Six 32K-token slots serve two concurrent contexts × three self-consistency samples
+(`--llm-self-consistency 3` sends one `n=3` request per context).
