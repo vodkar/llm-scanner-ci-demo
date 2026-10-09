@@ -29,3 +29,11 @@ def list_items(order_clause: str) -> list[dict[str, object]]:
     with get_connection() as connection:
         rows = connection.execute(f"SELECT {_ITEM_COLUMNS} FROM items {order_clause}").fetchall()
     return [dict(row) for row in rows]
+
+
+def list_items_sorted(field: str, direction: str) -> list[dict[str, object]]:
+    """Return all items ordered by ``field`` in ``direction``."""
+    query = f"SELECT {_ITEM_COLUMNS} FROM items ORDER BY {field} {direction}"
+    with get_connection() as connection:
+        rows = connection.execute(query).fetchall()
+    return [dict(row) for row in rows]
