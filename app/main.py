@@ -1,8 +1,9 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+from flask import Flask, abort, jsonify, request
 
 from app.auth import admin_required, login_required
+from app.backups import InvalidLabelError, create_backup
 from app.query_utils import DEFAULT_DIRECTION, DEFAULT_SORT_FIELD, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
 
@@ -40,6 +41,18 @@ def remove_item(item_id: int):
     if not delete_item(item_id):
         abort(404)
     return "", 204
+
+
+@app.post("/admin/backups")
+@admin_required
+def backup_database():
+    """Snapshot the database: ``{"label": "<a-z, 0-9, ->"}`` (administrators only)."""
+    payload = request.get_json(silent=True) or {}
+    try:
+        target = create_backup(str(payload.get("label", "manual")))
+    except InvalidLabelError as error:
+        abort(400, description=str(error))
+    return jsonify({"backup": target.name}), 201
 
 
 if __name__ == "__main__":
