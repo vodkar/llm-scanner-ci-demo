@@ -48,3 +48,12 @@ def fetch_user(user_id: int) -> User | None:
             "SELECT id, name, role FROM users WHERE id = ?", (user_id,)
         ).fetchone()
     return User(row["id"], row["name"], Role(row["role"])) if row is not None else None
+
+
+def set_user_role(user_id: int, role: Role) -> bool:
+    """Change a user's role; return False when the user does not exist."""
+    with get_connection() as connection:
+        cursor = connection.execute(
+            "UPDATE users SET role = ? WHERE id = ?", (role.value, user_id)
+        )
+    return cursor.rowcount == 1

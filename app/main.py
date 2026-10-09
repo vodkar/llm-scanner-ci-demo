@@ -1,10 +1,13 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+from dataclasses import asdict
+
+from flask import Flask, abort, jsonify, request
 
 from app.auth import admin_required, login_required
 from app.query_utils import DEFAULT_DIRECTION, DEFAULT_SORT_FIELD, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
+from app.users import Role, fetch_user, set_user_role
 
 app = Flask(__name__)
 
@@ -40,6 +43,20 @@ def remove_item(item_id: int):
     if not delete_item(item_id):
         abort(404)
     return "", 204
+
+
+@app.put("/users/<int:user_id>/role")
+@login_required
+def change_user_role(user_id: int):
+    """Change a user's role: ``{"role": "user" | "admin"}``."""
+    payload = request.get_json(silent=True) or {}
+    try:
+        role = Role(payload.get("role"))
+    except ValueError:
+        abort(400, description="role must be 'user' or 'admin'")
+    if not set_user_role(user_id, role):
+        abort(404)
+    return jsonify(asdict(fetch_user(user_id)))
 
 
 if __name__ == "__main__":
