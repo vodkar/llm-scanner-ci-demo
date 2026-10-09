@@ -6,7 +6,8 @@ from typing import ParamSpec, TypeVar
 
 from flask import abort, g, request
 
-from app.users import User, fetch_user_by_token
+from app.models import User
+from app.users import fetch_user_by_token
 
 P = ParamSpec("P")
 R = TypeVar("R")

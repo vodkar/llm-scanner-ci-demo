@@ -12,5 +12,5 @@ def normalize_sort(value: str) -> str:
 
 
 def build_order_clause(sort_field: str, direction: str) -> str:
-    """Build an ORDER BY clause for item listings."""
-    return f"ORDER BY {sort_field} {direction}"
+    """Build the ORDER BY expression for item listings."""
+    return f"{sort_field} {direction}"

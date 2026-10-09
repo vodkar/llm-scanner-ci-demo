@@ -1,38 +1,28 @@
 """Data access for inventory items."""
 
-import sqlite3
-from pathlib import Path
-from typing import Final
+from sqlalchemy import select, text
 
-DB_PATH: Final[Path] = Path(__file__).with_name("inventory.db")
-_ITEM_COLUMNS: Final[str] = "id, name, quantity"
+from app.db import session_scope
+from app.models import Item
 
 
-def get_connection() -> sqlite3.Connection:
-    """Open a connection to the inventory database."""
-    connection = sqlite3.connect(DB_PATH)
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-def fetch_item(item_id: int) -> dict[str, object] | None:
+def fetch_item(item_id: int) -> Item | None:
     """Return one item by id, or None when it does not exist."""
-    with get_connection() as connection:
-        row = connection.execute(
-            f"SELECT {_ITEM_COLUMNS} FROM items WHERE id = ?", (item_id,)
-        ).fetchone()
-    return dict(row) if row is not None else None
+    with session_scope() as session:
+        return session.get(Item, item_id)
 
 
-def list_items(order_clause: str) -> list[dict[str, object]]:
-    """Return all items ordered by a clause produced by ``build_order_clause``."""
-    with get_connection() as connection:
-        rows = connection.execute(f"SELECT {_ITEM_COLUMNS} FROM items {order_clause}").fetchall()
-    return [dict(row) for row in rows]
+def list_items(order_clause: str) -> list[Item]:
+    """Return all items ordered by an expression produced by ``build_order_clause``."""
+    with session_scope() as session:
+        return list(session.scalars(select(Item).order_by(text(order_clause))))
 
 
 def delete_item(item_id: int) -> bool:
     """Delete one item by id; return False when it does not exist."""
-    with get_connection() as connection:
-        cursor = connection.execute("DELETE FROM items WHERE id = ?", (item_id,))
-    return cursor.rowcount == 1
+    with session_scope() as session:
+        item = session.get(Item, item_id)
+        if item is None:
+            return False
+        session.delete(item)
+    return True

@@ -3,10 +3,12 @@
 from flask import Flask, abort, jsonify
 
 from app.auth import admin_required, current_user, login_required
+from app.db import init_db
 from app.query_utils import DEFAULT_DIRECTION, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
 
 app = Flask(__name__)
+init_db()
 
 
 @app.get("/health")
@@ -20,7 +22,7 @@ def health() -> dict[str, str]:
 def get_items():
     """Return all inventory items in the caller's preferred order."""
     items = list_items(build_order_clause(current_user().preferred_sort, DEFAULT_DIRECTION))
-    return jsonify(items)
+    return jsonify([item.to_dict() for item in items])
 
 
 @app.get("/items/<int:item_id>")
@@ -30,7 +32,7 @@ def get_item(item_id: int):
     item = fetch_item(item_id)
     if item is None:
         abort(404)
-    return jsonify(item)
+    return jsonify(item.to_dict())
 
 
 @app.delete("/items/<int:item_id>")
