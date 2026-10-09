@@ -57,3 +57,12 @@ def fetch_user(user_id: int) -> User | None:
             "SELECT id, name, role, preferred_sort FROM users WHERE id = ?", (user_id,)
         ).fetchone()
     return _to_user(row) if row is not None else None
+
+
+def list_users() -> list[User]:
+    """Return every account ordered by id."""
+    with get_connection() as connection:
+        rows = connection.execute(
+            "SELECT id, name, role, preferred_sort FROM users ORDER BY id"
+        ).fetchall()
+    return [_to_user(row) for row in rows]

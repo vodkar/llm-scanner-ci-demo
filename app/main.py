@@ -1,10 +1,14 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
+from dataclasses import asdict
+
 from flask import Flask, abort, jsonify
 
+from app.audit import request_context
 from app.auth import admin_required, current_user, login_required
 from app.query_utils import DEFAULT_DIRECTION, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
+from app.users import list_users
 
 app = Flask(__name__)
 
@@ -40,6 +44,15 @@ def remove_item(item_id: int):
     if not delete_item(item_id):
         abort(404)
     return "", 204
+
+
+@app.get("/users")
+@login_required
+def get_users():
+    """Return the user directory (administrators only)."""
+    if not request_context(current_user())["is_admin"]:
+        abort(403)
+    return jsonify([asdict(user) for user in list_users()])
 
 
 if __name__ == "__main__":
