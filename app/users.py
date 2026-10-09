@@ -57,3 +57,11 @@ def fetch_user(user_id: int) -> User | None:
             "SELECT id, name, role, preferred_sort FROM users WHERE id = ?", (user_id,)
         ).fetchone()
     return _to_user(row) if row is not None else None
+
+
+def update_preferred_sort(user_id: int, sort_field: str) -> None:
+    """Store the item column a user's listings are ordered by."""
+    with get_connection() as connection:
+        connection.execute(
+            "UPDATE users SET preferred_sort = ? WHERE id = ?", (sort_field, user_id)
+        )

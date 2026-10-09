@@ -1,10 +1,11 @@
 """Tiny inventory service used to demo llm-scanner in CI."""
 
-from flask import Flask, abort, jsonify
+from flask import Flask, abort, jsonify, request
 
 from app.auth import admin_required, current_user, login_required
-from app.query_utils import DEFAULT_DIRECTION, build_order_clause
+from app.query_utils import DEFAULT_DIRECTION, build_order_clause, normalize_sort
 from app.repository import delete_item, fetch_item, list_items
+from app.users import update_preferred_sort
 
 app = Flask(__name__)
 
@@ -39,6 +40,18 @@ def remove_item(item_id: int):
     """Delete an inventory item (administrators only)."""
     if not delete_item(item_id):
         abort(404)
+    return "", 204
+
+
+@app.put("/users/me/preferences")
+@login_required
+def update_preferences():
+    """Save the caller's listing order: ``{"sort": "<item column>"}``."""
+    payload = request.get_json(silent=True) or {}
+    sort_field = payload.get("sort")
+    if not isinstance(sort_field, str) or not sort_field.strip():
+        abort(400, description="sort must be a non-empty string")
+    update_preferred_sort(current_user().id, normalize_sort(sort_field))
     return "", 204
 
 
