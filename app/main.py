@@ -2,8 +2,8 @@
 
 from flask import Flask, abort, jsonify
 
-from app.auth import admin_required, login_required
-from app.query_utils import DEFAULT_DIRECTION, DEFAULT_SORT_FIELD, build_order_clause
+from app.auth import admin_required, current_user, login_required
+from app.query_utils import DEFAULT_DIRECTION, build_order_clause
 from app.repository import delete_item, fetch_item, list_items
 
 app = Flask(__name__)
@@ -18,8 +18,8 @@ def health() -> dict[str, str]:
 @app.get("/items")
 @login_required
 def get_items():
-    """Return all inventory items."""
-    items = list_items(build_order_clause(DEFAULT_SORT_FIELD, DEFAULT_DIRECTION))
+    """Return all inventory items in the caller's preferred order."""
+    items = list_items(build_order_clause(current_user().preferred_sort, DEFAULT_DIRECTION))
     return jsonify(items)
 
 
